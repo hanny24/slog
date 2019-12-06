@@ -1,8 +1,8 @@
 package slog
 
 trait LoggingContext[F[_]] {
-  def use[T: StructureEncoder, R](key: String,
-                                  value: T): LoggingContext.LoggingBuilder[F]
+  def use[T: StructureEncoder](key: String,
+                               value: T): LoggingContext.LoggingBuilder[F]
 }
 
 object LoggingContext {
@@ -10,7 +10,6 @@ object LoggingContext {
 
   trait LoggingBuilder[F[_]] {
     def scoped[T](fv: F[T]): F[T]
-    def use[T: StructureEncoder, R](key: String,
-                                    value: T): LoggingBuilder[F]
+    def use[T: StructureEncoder](key: String, value: T): LoggingBuilder[F]
   }
 }
