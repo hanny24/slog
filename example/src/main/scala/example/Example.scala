@@ -15,7 +15,7 @@ class Example[F[_]](loggerFactory: LoggerFactory[F],
   // output.
   def foo: F[Unit] = {
     // simple log message. Might take from scope.
-    // {"message": "Hello world!!", "file": "Example.scala", "line": 19
+    // {"message": "Hello world!!", "file": "Example.scala", "line": 19}
     logger.info.msg("Hello world!!") >>
       // Provide extract context to the log message
       // {"message": "Hello", "file": "Example.scala", "line": 22, "correlation_id": "<VALUE>"}
