@@ -2,6 +2,7 @@ package example
 
 import cats.Monad
 import cats.syntax.flatMap._
+import cats.syntax.functor._
 import slog.{LoggerFactory, LoggingContext}
 
 class Example[F[_]](
@@ -35,7 +36,16 @@ class Example[F[_]](
           logger.debug(new Exception)("test") >>
             // {"message": "test2", "file": "Example.scala", "line": 35, "correlation_id": "<VALUE>", "request_id": "<VALUE>"}
             logger.info("test2")
-        }
+        } >>
+      logger.trace.whenEnabled { logBuilder =>
+        val superExpensive: F[String] = ???
+        for {
+          value <- superExpensive
+          _ <- logBuilder
+            .withArg("expensive", value)
+            .log("This message was very expensive to compute!")
+        } yield ()
+      }
   }
 
   def bar: F[Unit] = {
