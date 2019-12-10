@@ -29,7 +29,7 @@ object LoggerImpl {
       c: blackbox.Context
   )(level: c.universe.TermName): c.Expr[LevelLogBuilder[F]] = {
     import c.universe._
-    val file = Literal(Constant(c.enclosingUnit.source.path.toString))
+    val file = Literal(Constant(c.enclosingPosition.source.path.toString))
     val line = Literal(Constant(c.enclosingPosition.line))
     val tree = q"${c.prefix}.underlying.$level($file, $line)"
     c.Expr(tree)

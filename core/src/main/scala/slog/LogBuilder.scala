@@ -1,6 +1,6 @@
 package slog
 
-import cats.Monad
+import cats.FlatMap
 import cats.syntax.flatMap._
 
 trait LevelLogBuilder[F[_]] {
@@ -22,13 +22,27 @@ trait WhenEnabledLogBuilder[F[_]] { self =>
   def log(msg: String): F[Unit] = apply(_.log(msg))
   def log(ex: Throwable)(msg: String): F[Unit] = apply(_.log(ex)(msg))
 
+  def withArg[T: StructureEncoder](
+      key: String,
+      value: => T
+  ): WhenEnabledLogBuilder[F] = {
+    new WhenEnabledLogBuilder[F] {
+      override def apply(f: LogBuilder[F] => F[Unit]): F[Unit] = self {
+        logBuilder =>
+          f(logBuilder.withArg(key, value))
+      }
+    }
+  }
+
   def computeArg[T: StructureEncoder](key: String)(
       fv: F[T]
-  )(implicit F: Monad[F]): WhenEnabledLogBuilder[F] = {
+  )(implicit F: FlatMap[F]): WhenEnabledLogBuilder[F] = {
     new WhenEnabledLogBuilder[F] {
       override def apply(f: LogBuilder[F] => F[Unit]): F[Unit] = {
-        fv.flatMap { value =>
-          self(f.compose[LogBuilder[F]](_.withArg(key, value)))
+        self { logBuilder =>
+          fv.flatMap { value =>
+            f(logBuilder.withArg(key, value))
+          }
         }
       }
     }

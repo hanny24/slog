@@ -40,18 +40,19 @@ class Example[F[_]](
       logger.trace.whenEnabled { logBuilder =>
         // low level method how to do things only when certain log level is enabled
         for {
-          value <- superExpensive
+          value <- superExpensiveToCompute
           _ <- logBuilder
             .withArg("expensive", value)
             .log("This message was very expensive to compute!")
         } yield ()
       } >>
       logger.trace.whenEnabled // higher level API
-        .computeArg("expensive")(superExpensive)
+        .computeArg("expensive")(superExpensiveToCompute)
+        .withArg("cheap", "not expensive but to be included as well")
         .log("This message was very expensive to compute!")
   }
 
-  val superExpensive: F[String] = ???
+  val superExpensiveToCompute: F[String] = ???
 
   def bar: F[Unit] = {
     // We can use case classes/sealed traits as context as well!
