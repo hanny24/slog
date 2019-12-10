@@ -4,8 +4,10 @@ import cats.Monad
 import cats.syntax.flatMap._
 import slog.{LoggerFactory, LoggingContext}
 
-class Example[F[_]](loggerFactory: LoggerFactory[F],
-                    loggingContext: LoggingContext[F])(implicit F: Monad[F]) {
+class Example[F[_]](
+    loggerFactory: LoggerFactory[F],
+    loggingContext: LoggingContext[F]
+)(implicit F: Monad[F]) {
   private[this] val logger = loggerFactory.make[Example[F]]
   // or
   // private [this] val logger = loggerFactory.make("my-logger")
@@ -16,23 +18,23 @@ class Example[F[_]](loggerFactory: LoggerFactory[F],
   def foo: F[Unit] = {
     // simple log message. Might take from scope.
     // {"message": "Hello world!!", "file": "Example.scala", "line": 19}
-    logger.info.msg("Hello world!!") >>
+    logger.info("Hello world!!") >>
       // Provide extract context to the log message
       // {"message": "Hello", "file": "Example.scala", "line": 22, "correlation_id": "<VALUE>"}
-      logger.info.context("correlation_id", "<VALUE>").msg("Hello") >>
+      logger.info.withArg("correlation_id", "<VALUE>").log("Hello") >>
       // Provide extra context and an exception
       // {"message": "Hello", "file": "Example.scala", "line": 25, "correlation_id": "<VALUE>", "stack_trace": "Exception ..."}
       logger.info
-        .context("correlation_id", "<VALUE>")
-        .msg(new Exception)("Hello") >>
+        .withArg("correlation_id", "<VALUE>")
+        .log(new Exception)("Hello") >>
       loggingContext
-        .use("correlation_id", "<VALUE>")
-        .use("request_id", "<VALUE>")
-        .scoped {
+        .withArg("correlation_id", "<VALUE>")
+        .withArg("request_id", "<VALUE>")
+        .use {
           // {"message": "test", "file": "Example.scala", "line": 33, "correlation_id": "<VALUE>", "request_id": "<VALUE>", "stack_trace": "Exception ..."}
-          logger.debug.msg(new Exception)("test") >>
-          // {"message": "test2", "file": "Example.scala", "line": 35, "correlation_id": "<VALUE>", "request_id": "<VALUE>"}
-          logger.info.msg("test2")
+          logger.debug(new Exception)("test") >>
+            // {"message": "test2", "file": "Example.scala", "line": 35, "correlation_id": "<VALUE>", "request_id": "<VALUE>"}
+            logger.info("test2")
         }
   }
 
@@ -45,8 +47,8 @@ class Example[F[_]](loggerFactory: LoggerFactory[F],
     import slog.generic.auto._
     // {"message": "test", "file": "Example.scala", "line": 47, "foo_bar": {"value": 10, "that": "foobar", "bar": {"values": [42.0]}}}
     logger.trace
-      .context("foo_bar", Foo(10, "foobar", Bar(List(42.0))))
-      .msg("test")
+      .withArg("foo_bar", Foo(10, "foobar", Bar(List(42.0))))
+      .log("test")
 
     // it's also easily possible to debug failed typeclass deriviation.
     // consider following example:
