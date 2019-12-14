@@ -2,7 +2,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date %level %marker %logger{10} %msg%n</pattern>
+            <pattern>%date %level %marker %logger %msg%n</pattern>
         </encoder>
         <!--<encoder class="net.logstash.logback.encoder.LogstashEncoder" />-->
 

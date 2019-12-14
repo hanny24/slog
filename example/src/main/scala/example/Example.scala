@@ -1,15 +1,13 @@
 package example
 
-import cats.mtl.{ApplicativeAsk, ApplicativeLocal}
+import cats.Monad
+import cats.mtl.ApplicativeLocal
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import cats.{Applicative, Monad}
 import monix.eval.{Task, TaskLocal}
 import monix.execution.schedulers.CanBlock
-import org.slf4j.Marker
-import org.slf4j.helpers.BasicMarkerFactory
 import slog.monix.MonixContext
-import slog.slf4j.{AsMarker, Slf4jArgs, Slf4jContext, Slf4jFactory}
+import slog.slf4j.{Slf4jArgs, Slf4jContext, Slf4jFactory}
 import slog.{LoggerFactory, LoggingContext}
 
 class Example[F[_]](
@@ -40,7 +38,7 @@ class Example[F[_]](
         .withArg("request_id", "<VALUE>")
         .use {
           // {"message": "test", "file": "Example.scala", "line": 33, "correlation_id": "<VALUE>", "request_id": "<VALUE>", "stack_trace": "Exception ..."}
-          logger.debug(new Exception, "test") >>
+          logger.debug(new Exception("error"), "test") >>
             // {"message": "test2", "file": "Example.scala", "line": 35, "correlation_id": "<VALUE>", "request_id": "<VALUE>"}
             logger.info("test2")
         } >>
@@ -59,7 +57,7 @@ class Example[F[_]](
         .log("This message was very expensive to compute!")
   }
 
-  val superExpensiveToCompute: F[String] = ???
+  val superExpensiveToCompute: F[String] = F.pure("$$$")
 
   def bar: F[Unit] = {
     // We can use case classes/sealed traits as context as well!
@@ -96,13 +94,14 @@ object Example extends App {
 
   val taskLocal: TaskLocal[Slf4jArgs] =
     TaskLocal(Slf4jArgs.empty).runSyncUnsafe()
+
   implicit val applicativeAsk: ApplicativeLocal[Task, Slf4jArgs] =
     MonixContext.identity(taskLocal)
 
-  implicit val asMarker: AsMarker[Slf4jArgs] = new AsMarker[Slf4jArgs] {
-    override def extract(v: Slf4jArgs): Option[Marker] =
-      Some((new BasicMarkerFactory).getMarker("INCREASE"))
-  }
+  //implicit val asMarker: AsMarker[Slf4jArgs] = new AsMarker[Slf4jArgs] {
+  //  override def extract(v: Slf4jArgs): Option[Marker] =
+  //    Some((new BasicMarkerFactory).getMarker("INCREASE"))
+  //}
 
   val loggerFactory =
     Slf4jFactory[Task]
@@ -113,18 +112,9 @@ object Example extends App {
 
   val loggingContext = Slf4jContext.make
 
-  val logger = loggerFactory.make("test_logger")
-  final case class Tmp(a: Long, b: List[Tmp])
-  import slog.generic.auto._
+  val example = new Example[Task](loggerFactory, loggingContext)
 
-  val ops =
-    loggingContext.withArg("correlation_id", 42).use {
-      logger.debug
-        .withArg("arg1", "hellow")
-        .withArg("struct", Tmp(10, List(Tmp(57, Nil))))
-        .log("hello") >>
-        logger.trace.withArg("arg2", 7999).log(new RuntimeException, "sad")
-    }
+  val ops = example.foo >> example.bar
 
   ops.runSyncUnsafe()
 
