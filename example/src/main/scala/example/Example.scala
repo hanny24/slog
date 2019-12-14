@@ -1,6 +1,6 @@
 package example
 
-import cats.mtl.ApplicativeAsk
+import cats.mtl.{ApplicativeAsk, ApplicativeLocal}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.{Applicative, Monad}
@@ -8,7 +8,8 @@ import monix.eval.{Task, TaskLocal}
 import monix.execution.schedulers.CanBlock
 import org.slf4j.Marker
 import org.slf4j.helpers.BasicMarkerFactory
-import slog.slf4j.{AsMarker, Slf4jArgs, Slf4jFactory}
+import slog.monix.MonixContext
+import slog.slf4j.{AsMarker, Slf4jArgs, Slf4jContext, Slf4jFactory}
 import slog.{LoggerFactory, LoggingContext}
 
 class Example[F[_]](
@@ -95,14 +96,8 @@ object Example extends App {
 
   val taskLocal: TaskLocal[Slf4jArgs] =
     TaskLocal(Slf4jArgs.empty).runSyncUnsafe()
-  implicit val applicativeAsk: ApplicativeAsk[Task, Slf4jArgs] =
-    new ApplicativeAsk[Task, Slf4jArgs] {
-      override val applicative: Applicative[Task] = Applicative[Task]
-
-      override def ask: Task[Slf4jArgs] = taskLocal.read
-
-      override def reader[A](f: Slf4jArgs => A): Task[A] = taskLocal.read.map(f)
-    }
+  implicit val applicativeAsk: ApplicativeLocal[Task, Slf4jArgs] =
+    MonixContext.identity(taskLocal)
 
   implicit val asMarker: AsMarker[Slf4jArgs] = new AsMarker[Slf4jArgs] {
     override def extract(v: Slf4jArgs): Option[Marker] =
@@ -116,12 +111,20 @@ object Example extends App {
       .make
   //val loggerFactory = Slf4jFactory[Task].noContext.make
 
+  val loggingContext = Slf4jContext.make
+
   val logger = loggerFactory.make("test_logger")
+  final case class Tmp(a: Long, b: List[Tmp])
+  import slog.generic.auto._
 
   val ops =
-    taskLocal.write(Map("correlation_id" -> 42)) >>
-      logger.debug.withArg("arg1", "hellow").log("hello") >>
-      logger.trace.withArg("arg2", 7999).log(new RuntimeException, "sad")
+    loggingContext.withArg("correlation_id", 42).use {
+      logger.debug
+        .withArg("arg1", "hellow")
+        .withArg("struct", Tmp(10, List(Tmp(57, Nil))))
+        .log("hello") >>
+        logger.trace.withArg("arg2", 7999).log(new RuntimeException, "sad")
+    }
 
   ops.runSyncUnsafe()
 
