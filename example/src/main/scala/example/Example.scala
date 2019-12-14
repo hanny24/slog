@@ -1,8 +1,14 @@
 package example
 
-import cats.Monad
+import cats.mtl.ApplicativeAsk
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.{Applicative, Monad}
+import monix.eval.{Task, TaskLocal}
+import monix.execution.schedulers.CanBlock
+import org.slf4j.Marker
+import org.slf4j.helpers.BasicMarkerFactory
+import slog.slf4j.{AsMarker, Slf4jArgs, Slf4jFactory}
 import slog.{LoggerFactory, LoggingContext}
 
 class Example[F[_]](
@@ -27,13 +33,13 @@ class Example[F[_]](
       // {"message": "Hello", "file": "Example.scala", "line": 25, "correlation_id": "<VALUE>", "stack_trace": "Exception ..."}
       logger.info
         .withArg("correlation_id", "<VALUE>")
-        .log(new Exception)("Hello") >>
+        .log(new Exception, "Hello") >>
       loggingContext
         .withArg("correlation_id", "<VALUE>")
         .withArg("request_id", "<VALUE>")
         .use {
           // {"message": "test", "file": "Example.scala", "line": 33, "correlation_id": "<VALUE>", "request_id": "<VALUE>", "stack_trace": "Exception ..."}
-          logger.debug(new Exception)("test") >>
+          logger.debug(new Exception, "test") >>
             // {"message": "test2", "file": "Example.scala", "line": 35, "correlation_id": "<VALUE>", "request_id": "<VALUE>"}
             logger.info("test2")
         } >>
@@ -81,4 +87,42 @@ class Example[F[_]](
     //    genStructureEncoder[Outer]
     F.unit
   }
+}
+
+object Example extends App {
+  import monix.execution.Scheduler.Implicits.traced
+  implicit val canBlock = CanBlock.permit
+
+  val taskLocal: TaskLocal[Slf4jArgs] =
+    TaskLocal(Slf4jArgs.empty).runSyncUnsafe()
+  implicit val applicativeAsk: ApplicativeAsk[Task, Slf4jArgs] =
+    new ApplicativeAsk[Task, Slf4jArgs] {
+      override val applicative: Applicative[Task] = Applicative[Task]
+
+      override def ask: Task[Slf4jArgs] = taskLocal.read
+
+      override def reader[A](f: Slf4jArgs => A): Task[A] = taskLocal.read.map(f)
+    }
+
+  implicit val asMarker: AsMarker[Slf4jArgs] = new AsMarker[Slf4jArgs] {
+    override def extract(v: Slf4jArgs): Option[Marker] =
+      Some((new BasicMarkerFactory).getMarker("INCREASE"))
+  }
+
+  val loggerFactory =
+    Slf4jFactory[Task]
+      .contextAsk[Slf4jArgs]
+      .withArg("app_version", "0.1.0")
+      .make
+  //val loggerFactory = Slf4jFactory[Task].noContext.make
+
+  val logger = loggerFactory.make("test_logger")
+
+  val ops =
+    taskLocal.write(Map("correlation_id" -> 42)) >>
+      logger.debug.withArg("arg1", "hellow").log("hello") >>
+      logger.trace.withArg("arg2", 7999).log(new RuntimeException, "sad")
+
+  ops.runSyncUnsafe()
+
 }
