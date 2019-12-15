@@ -4,7 +4,7 @@ import slog.{LevelLogBuilder, LogBuilder}
 
 import scala.reflect.macros.blackbox
 
-object LoggerImpl {
+private[slog] object LoggerImpl {
   def infoImpl[F[_]](c: blackbox.Context): c.Expr[LevelLogBuilder[F]] = {
     impl[F](c)(c.universe.TermName("info"))
   }

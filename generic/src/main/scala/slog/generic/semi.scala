@@ -13,5 +13,5 @@ object semi {
   def dispatch[T](sealedTrait: SealedTrait[Typeclass, T]): Typeclass[T] = {
     Common.dispatch(sealedTrait)
   }
-  def structureEncoder[T]: Typeclass[T] = macro Magnolia.gen[T]
+  def structureEncoder[T]: StructureEncoder[T] = macro Magnolia.gen[T]
 }

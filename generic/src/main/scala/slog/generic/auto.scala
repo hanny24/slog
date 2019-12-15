@@ -1,8 +1,10 @@
 package slog.generic
 
-import magnolia.{CaseClass, Magnolia, SealedTrait}
+import magnolia.{CaseClass, SealedTrait}
 import slog.StructureEncoder
+import slog.`export`.Exported
 import slog.generic.internal.Common
+
 import scala.language.experimental.macros
 
 object auto {
@@ -13,5 +15,8 @@ object auto {
   def dispatch[T](sealedTrait: SealedTrait[Typeclass, T]): Typeclass[T] = {
     Common.dispatch(sealedTrait)
   }
-  implicit def genStructureEncoder[T]: Typeclass[T] = macro Magnolia.gen[T]
+
+  implicit def genStructureEncoder[T]: Exported[StructureEncoder[T]] =
+    macro internal.Macros.exportEncoder[T]
+
 }

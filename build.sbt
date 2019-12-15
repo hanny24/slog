@@ -34,7 +34,10 @@ lazy val example = (project in file("example"))
 lazy val generic = (project in file("generic"))
   .settings(
     name := "slog-generic",
-    libraryDependencies += magnolia
+    libraryDependencies += magnolia,
+    libraryDependencies ++= Seq(
+      scalaTest % Test
+    )
   )
   .dependsOn(core)
 
