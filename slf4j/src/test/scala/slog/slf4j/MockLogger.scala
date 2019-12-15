@@ -213,7 +213,7 @@ class MockLogger extends Logger {
     addTo(_errorMessages, Message(msg, t))
 
   override def isErrorEnabled(marker: Marker): Boolean =
-    expectedMarker.forall(_ == marker) &&   level <= Level.Error
+    expectedMarker.forall(_ == marker) && level <= Level.Error
 
   override def error(marker: Marker, msg: String): Unit =
     addTo(_errorMessages, Message(marker, msg))

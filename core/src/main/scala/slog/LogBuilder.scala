@@ -5,4 +5,3 @@ trait LogBuilder[F[_]] {
   def log(ex: Throwable, msg: String): F[Unit]
   def withArg[T: StructureEncoder](key: String, value: => T): LogBuilder[F]
 }
-
