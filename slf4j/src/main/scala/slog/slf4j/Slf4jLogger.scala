@@ -54,7 +54,7 @@ private[slf4j] class Slf4jLogger[F[_], C](
       self.log(doLog, isLogEnabled, args, msg, null)
 
     override def log(ex: Throwable, msg: String): F[Unit] =
-      self.log(doLog, isLogEnabled, args, msg, null)
+      self.log(doLog, isLogEnabled, args, msg, ex)
 
     override def withArg[T: StructureEncoder](
         key: String,

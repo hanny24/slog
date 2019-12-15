@@ -7,48 +7,56 @@ ThisBuild / organizationName := "example"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "slog",
-    libraryDependencies += scalaTest % Test
+    name := "slog"
+  )
+  .aggregate(api, core, example, generic, monix, slf4j)
+
+lazy val api = (project in file("api"))
+  .settings(
+    name := "slog-api"
   )
   .dependsOn(core)
 
 lazy val core = (project in file("core"))
   .settings(
-    name := "core",
+    name := "slog-core",
     libraryDependencies += catsCore,
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
   )
 
 lazy val example = (project in file("example"))
   .settings(
-    name := "example",
+    name := "slog-example",
     libraryDependencies ++= Seq(catsCore, logback, logstash, monixDependency)
   )
-  .dependsOn(root, generic, slf4j, monix)
+  .dependsOn(api, generic, slf4j, monix)
 
 lazy val generic = (project in file("generic"))
   .settings(
-    name := "generic",
+    name := "slog-generic",
     libraryDependencies += magnolia
   )
   .dependsOn(core)
 
+lazy val monix = (project in file("monix"))
+  .settings(
+    name := "slog-slf4j",
+    libraryDependencies ++= Seq(catsMtl, monixDependency)
+  )
+
 lazy val slf4j = (project in file("slf4j"))
   .settings(
-    name := "slf4j",
+    name := "slog-slf4j",
     libraryDependencies ++= Seq(
       catsCore,
       catsEffect,
       catsMtl,
       logstash,
       slf4jDepedency
+    ),
+    libraryDependencies ++= Seq(
+      diffx % Test,
+      scalaTest % Test
     )
   )
-  .dependsOn(core, root)
-
-lazy val monix = (project in file("monix"))
-  .settings(
-    name := "slf4j",
-    libraryDependencies += monixDependency,
-    libraryDependencies += catsMtl
-  )
+  .dependsOn(api, core)
