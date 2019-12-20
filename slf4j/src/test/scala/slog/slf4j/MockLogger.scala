@@ -16,7 +16,7 @@ class MockLogger extends Logger {
 
   private def addTo(where: ListBuffer[Message], message: Message): Unit = {
     where.synchronized {
-      where.addOne(message)
+      where += message
     }
   }
 

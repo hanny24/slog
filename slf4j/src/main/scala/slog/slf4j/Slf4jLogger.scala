@@ -96,7 +96,9 @@ private[slf4j] class Slf4jLogger[F[_], C](
       F.delay {
         val contextMarker = extractMarker(context)
         if (isLogEnabled(contextMarker.orNull)) {
-          val allArgs = extractArgs(context) ++ args.view.mapValues(_()).toMap
+          val allArgs = extractArgs(context) ++ args.map {
+            case (key, value) => key -> value()
+          }
           val marker = new MapEntriesAppendingMarker(allArgs.asJava)
           contextMarker.foreach(m => marker.add(m))
           doLog(

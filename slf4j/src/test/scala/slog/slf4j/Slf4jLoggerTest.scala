@@ -3,8 +3,9 @@ package slog.slf4j
 import cats.effect.IO
 import com.softwaremill.diffx.scalatest.DiffMatcher._
 import net.logstash.logback.marker.MapEntriesAppendingMarker
+import org.scalatest.funspec.FixtureAnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, Outcome, fixture}
+import org.scalatest.{Inside, Outcome}
 import org.slf4j.Marker
 import org.slf4j.helpers.BasicMarkerFactory
 import slog.slf4j.MockLogger.Message
@@ -12,7 +13,8 @@ import slog.{LevelLogBuilder, LocationAwareLogger}
 
 import scala.jdk.CollectionConverters._
 
-class Slf4jLoggerTest extends fixture.FunSpec with Matchers with Inside {
+
+class Slf4jLoggerTest extends FixtureAnyFunSpec with Matchers with Inside {
 
   describe("slf4j logger") {
     describe("for trace it") {

@@ -1,9 +1,9 @@
 package slog.generic
 
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import slog.{StructureBuilder, StructureEncoder}
 
-class DerivationTest extends FunSpec {
+class DerivationTest extends AnyFunSpec {
   import auto._
 
   describe("StructureEncoder") {
